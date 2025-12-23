@@ -1,0 +1,9 @@
+# Compiled binary
+ssh-forwardd
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

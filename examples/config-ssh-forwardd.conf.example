@@ -1,0 +1,24 @@
+# ssh-forwardd configuration file
+# Location: ~/.ssh/config-ssh-forwardd.conf
+#
+# Format: One tunnel command per line (can use \ for continuation)
+# Requirements: Each command MUST include -N and at least one -L
+# Port range: 19000-19999 recommended to avoid conflicts
+
+# Example 1: Simple SSH tunnel to a database server
+ssh -N -L 19000:localhost:5432 user@db.example.com
+
+# Example 2: SSH tunnel through a jump host (bastion)
+ssh -N -L 19001:internal-db:3306 -J bastion.example.com user@internal-server
+
+# Example 3: Multiple port forwards in one tunnel
+ssh -N -L 19002:localhost:6379 -L 19003:localhost:27017 user@cache-server.example.com
+
+# Example 4: GCP tunnel using gcloud compute ssh
+gcloud compute ssh my-vm-instance \
+  --project=my-gcp-project \
+  --zone=europe-west1-b \
+  -- -N -L 19010:localhost:8080
+
+# Example 5: SSH with custom identity file
+ssh -N -i ~/.ssh/custom_key -L 19020:localhost:3000 deploy@prod.example.com
