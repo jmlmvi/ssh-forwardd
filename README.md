@@ -1,103 +1,103 @@
 # ssh-forwardd
 
-A lightweight macOS daemon that maintains SSH port forwarding tunnels with automatic reconnection.
+Un daemon macOS léger qui maintient des tunnels SSH en port forwarding avec reconnexion automatique.
 
-## Features
+## Fonctionnalités
 
-- **Automatic reconnection** — Restarts tunnels after network disconnection
-- **Wake from sleep** — Recreates tunnels after Mac wakes from sleep
-- **SSH & GCP support** — Works with standard `ssh` and `gcloud compute ssh`
-- **Exponential backoff** — Prevents connection storms (1s → 60s)
-- **launchd integration** — Starts automatically at login
+- **Reconnexion automatique** — Relance les tunnels après une coupure réseau
+- **Sortie de veille** — Recrée les tunnels après le réveil du Mac
+- **Support SSH & GCP** — Compatible avec `ssh` et `gcloud compute ssh`
+- **Backoff exponentiel** — Évite les tempêtes de connexion (1s → 60s)
+- **Intégration launchd** — Démarre automatiquement à la connexion
 
-## Requirements
+## Prérequis
 
-- macOS (Intel or Apple Silicon)
-- Clang/GCC compiler
-- SSH keys configured (or gcloud auth)
+- macOS (Intel ou Apple Silicon)
+- Compilateur Clang/GCC
+- Clés SSH configurées (ou gcloud auth)
 
 ## Installation
 
-### Build from source
+### Compiler depuis les sources
 
 ```bash
-git clone https://github.com/yourusername/ssh-forwardd.git
+git clone https://github.com/jmlmvi/ssh-forwardd.git
 cd ssh-forwardd
 make
 sudo make install
 ```
 
-### Configure tunnels
+### Configurer les tunnels
 
-Create your tunnel configuration:
+Créer le fichier de configuration :
 
 ```bash
 nano ~/.ssh/config-ssh-forwardd.conf
 ```
 
-Example configuration:
+Exemple de configuration :
 
 ```bash
-# Simple SSH tunnel
+# Tunnel SSH simple
 ssh -N -L 19000:localhost:5432 user@db.example.com
 
-# SSH through jump host
+# SSH via jump host
 ssh -N -L 19001:internal-db:3306 -J bastion.example.com user@server
 
-# GCP tunnel
+# Tunnel GCP
 gcloud compute ssh my-vm \
   --project=my-project \
   --zone=europe-west1-b \
   -- -N -L 19002:localhost:8080
 ```
 
-**Requirements for each line:**
-- Must include `-N` (no shell)
-- Must include at least one `-L` (local port forward)
-- Use ports 19000-19999 to avoid conflicts
+**Règles pour chaque ligne :**
+- Doit inclure `-N` (pas de shell)
+- Doit inclure au moins un `-L` (port forwarding local)
+- Utiliser les ports 19000-19999 pour éviter les conflits
 
-### Install LaunchAgent
+### Installer le LaunchAgent
 
 ```bash
 cp examples/eu.lmvi.ssh-forwardd.plist ~/Library/LaunchAgents/
 ```
 
-Edit the plist if needed to match your username and paths.
+Modifier le plist si nécessaire pour correspondre à votre nom d'utilisateur et chemins.
 
-### Start the service
+### Démarrer le service
 
 ```bash
 launchctl load ~/Library/LaunchAgents/eu.lmvi.ssh-forwardd.plist
 ```
 
-## Usage
+## Utilisation
 
-### Check status
+### Vérifier le statut
 
 ```bash
 launchctl list | grep ssh-forwardd
 ```
 
-### View logs
+### Voir les logs
 
 ```bash
 tail -f /tmp/ssh-forwardd.log
 ```
 
-### Restart after config change
+### Redémarrer après modification de la config
 
 ```bash
 launchctl unload ~/Library/LaunchAgents/eu.lmvi.ssh-forwardd.plist
 launchctl load ~/Library/LaunchAgents/eu.lmvi.ssh-forwardd.plist
 ```
 
-### Stop the service
+### Arrêter le service
 
 ```bash
 launchctl unload ~/Library/LaunchAgents/eu.lmvi.ssh-forwardd.plist
 ```
 
-## Uninstall
+## Désinstallation
 
 ```bash
 launchctl unload ~/Library/LaunchAgents/eu.lmvi.ssh-forwardd.plist
@@ -106,21 +106,21 @@ sudo make uninstall
 rm ~/.ssh/config-ssh-forwardd.conf
 ```
 
-## How it works
+## Fonctionnement
 
-1. Reads tunnel commands from `~/.ssh/config-ssh-forwardd.conf`
-2. Spawns each tunnel as a child process
-3. Monitors processes and restarts them if they die
-4. Uses exponential backoff (1s to 60s) on repeated failures
-5. Handles SIGTERM/SIGINT for clean shutdown
+1. Lit les commandes de tunnel depuis `~/.ssh/config-ssh-forwardd.conf`
+2. Lance chaque tunnel comme processus enfant
+3. Surveille les processus et les relance s'ils meurent
+4. Utilise un backoff exponentiel (1s à 60s) en cas d'échecs répétés
+5. Gère SIGTERM/SIGINT pour un arrêt propre
 
 ## Limitations
 
-- Local port forwarding only (`-L`)
-- No reverse tunnels (`-R`)
-- No SOCKS proxy (`-D`)
-- No built-in key management (uses system SSH/gcloud)
+- Port forwarding local uniquement (`-L`)
+- Pas de tunnels inverses (`-R`)
+- Pas de proxy SOCKS (`-D`)
+- Pas de gestion de clés intégrée (utilise SSH/gcloud du système)
 
-## License
+## Licence
 
-MIT License - See [LICENSE](LICENSE) for details.
+Licence MIT - Voir [LICENSE](LICENSE) pour plus de détails.
