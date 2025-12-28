@@ -6,7 +6,7 @@ Un daemon macOS léger qui maintient des tunnels SSH en port forwarding avec rec
 
 - **Reconnexion automatique** — Relance les tunnels après une coupure réseau
 - **Sortie de veille** — Recrée les tunnels après le réveil du Mac
-- **Support SSH & GCP** — Compatible avec `ssh` et `gcloud compute ssh`
+- **Multi-cloud** — Compatible avec SSH standard, GCP et AWS
 - **Backoff exponentiel** — Évite les tempêtes de connexion (1s → 60s)
 - **Intégration launchd** — Démarre automatiquement à la connexion
 
@@ -14,7 +14,14 @@ Un daemon macOS léger qui maintient des tunnels SSH en port forwarding avec rec
 
 - macOS (Intel ou Apple Silicon)
 - Compilateur Clang/GCC
-- Clés SSH configurées (ou gcloud auth)
+- Clés SSH configurées
+
+### Outils cloud (optionnels)
+
+| Provider | Outil requis | Installation |
+|----------|--------------|--------------|
+| GCP | `gcloud` CLI | [cloud.google.com/sdk](https://cloud.google.com/sdk/docs/install) |
+| AWS | `aws` CLI + Session Manager plugin | [aws.amazon.com/cli](https://aws.amazon.com/cli/) |
 
 ## Installation
 
@@ -35,23 +42,54 @@ Créer le fichier de configuration :
 nano ~/.ssh/config-ssh-forwardd.conf
 ```
 
-Exemple de configuration :
+### Exemples de configuration
+
+#### SSH standard
 
 ```bash
 # Tunnel SSH simple
-ssh -N -L 19000:localhost:5432 user@db.example.com
+ssh -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
+  -L 19000:localhost:5432 user@db.example.com
 
-# SSH via jump host
-ssh -N -L 19001:internal-db:3306 -J bastion.example.com user@server
+# SSH via bastion (jump host)
+ssh -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
+  -J bastion.example.com \
+  -L 19001:internal-db:3306 user@private-server
+```
 
-# Tunnel GCP
+#### Google Cloud Platform (GCP)
+
+```bash
+# Tunnel via gcloud compute ssh
 gcloud compute ssh my-vm \
   --project=my-project \
   --zone=europe-west1-b \
-  -- -N -L 19002:localhost:8080
+  -- -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -L 19002:localhost:8080
 ```
 
-**Règles pour chaque ligne :**
+#### Amazon Web Services (AWS)
+
+```bash
+# SSH direct vers EC2
+ssh -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
+  -i ~/.ssh/aws-key.pem \
+  -L 19010:localhost:5432 ec2-user@ec2-xx-xx-xx-xx.compute.amazonaws.com
+
+# SSH via bastion AWS
+ssh -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
+  -J ec2-user@bastion.example.com \
+  -i ~/.ssh/aws-key.pem \
+  -L 19011:rds-instance.xxx.region.rds.amazonaws.com:5432 ec2-user@private-instance
+
+# AWS SSM Session Manager (sans accès SSH direct)
+aws ssm start-session \
+  --target i-0123456789abcdef \
+  --document-name AWS-StartPortForwardingSession \
+  --parameters '{"portNumber":["5432"],"localPortNumber":["19012"]}'
+```
+
+### Règles de configuration
+
 - Doit inclure `-N` (pas de shell)
 - Doit inclure au moins un `-L` (port forwarding local)
 - Utiliser les ports 19000-19999 pour éviter les conflits
@@ -122,7 +160,7 @@ rm ~/.ssh/config-ssh-forwardd.conf
 - Port forwarding local uniquement (`-L`)
 - Pas de tunnels inverses (`-R`)
 - Pas de proxy SOCKS (`-D`)
-- Pas de gestion de clés intégrée (utilise SSH/gcloud du système)
+- Pas de gestion de clés intégrée (utilise SSH/gcloud/aws du système)
 
 ## Licence
 
