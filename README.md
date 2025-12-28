@@ -55,6 +55,9 @@ gcloud compute ssh my-vm \
 - Doit inclure `-N` (pas de shell)
 - Doit inclure au moins un `-L` (port forwarding local)
 - Utiliser les ports 19000-19999 pour éviter les conflits
+- **Recommandé** : Ajouter les options keepalive pour détecter les connexions mortes :
+  - `-o ServerAliveInterval=30` (ping toutes les 30s)
+  - `-o ServerAliveCountMax=3` (ferme après 3 échecs = 90s)
 
 ### Installer le LaunchAgent
 
